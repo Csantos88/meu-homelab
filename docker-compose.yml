@@ -1,0 +1,256 @@
+services:
+  # --- DASHBOARD ---
+  heimdall:
+    image: lscr.io/linuxserver/heimdall:latest
+    container_name: homelab_heimdall
+    restart: always
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Sao_Paulo
+    networks:
+      - nginx-proxy-network
+    volumes:
+      - heimdall_config:/config
+      
+  # --- BANCOS DE DADOS ---
+  mysql_db:
+    image: mysql:8.0
+    container_name: homelab_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: dolibarr
+    networks:
+      - homelab_internal
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  db_postgres:
+    image: postgres:15
+    container_name: homelab_postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - homelab_internal
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  db_mongodb:
+    image: mongo:6.0
+    container_name: homelab_mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    networks:
+      - homelab_internal
+    volumes:
+      - mongodb_data:/data/db
+
+  # Redis para suporte ao Sure e outras aplicações
+  db_redis:
+    image: redis:alpine
+    container_name: homelab_redis
+    restart: always
+    networks:
+      - homelab_internal
+
+  # --- FINANCE APP ---
+  sure:
+    image: ghcr.io/we-promise/sure:stable
+    container_name: homelab_sure
+    restart: always
+    environment:
+      - POSTGRES_USER= ${POSTGRES_USER}
+      - POSTGRES_PASSWORD= ${POSTGRES_PASSWORD}
+      - POSTGRES_DB= ${POSTGRES_DB}
+      - DB_HOST= ${DB_HOST}
+      - DB_PORT= 5432
+      - SECRET_KEY_BASE= ${SECRET_KEY_BASE}
+      - TZ=America/Sao_Paulo
+    networks:
+      - homelab_internal
+      - nginx-proxy-network
+    depends_on:
+      - db_postgres
+      - db_redis
+    volumes:
+      - sure_data:/app/storage
+
+  # --- LOW-CODE & AUTOMATION ---
+  appsmith:
+    image: index.docker.io/appsmith/appsmith-ce
+    container_name: homelab_appsmith
+    restart: always
+    environment:
+      - APPSMITH_REPLICATION_ENABLED=false
+      - APPSMITH_TRUST_PROXY=true
+    networks:
+      - homelab_internal
+      - nginx-proxy-network
+    volumes:
+      - appsmith_data:/appsmith-stacks
+
+  budibase:
+    image: budibase/budibase:latest
+    container_name: homelab_budibase
+    restart: always
+    networks:
+      - homelab_internal
+      - nginx-proxy-network
+    volumes:
+      - budibase_data:/manage
+
+  # --- CI/CD & ORCHESTRATION ---
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: homelab_jenkins
+    restart: always
+    user: root
+    networks:
+      - homelab_internal
+      - nginx-proxy-network
+    volumes:
+      - jenkins_data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  airflow-webserver:
+    build: 
+      context: ./airflow-custom
+    container_name: homelab_airflow
+    restart: always
+    depends_on:
+      - db_postgres
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${AIRFLOW_DB_CONN}
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+    networks:
+      - homelab_internal
+      - nginx-proxy-network
+    volumes:
+      - airflow_dags:/opt/airflow/dags
+      - airflow_logs:/opt/airflow/logs
+      - airflow_plugins:/opt/airflow/plugins
+    command: webserver
+
+  airflow-scheduler:
+    build: 
+      context: ./airflow-custom
+    container_name: homelab_airflow_scheduler
+    restart: always
+    depends_on:
+      - airflow-webserver
+    environment:
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${AIRFLOW_DB_CONN}
+    networks:
+      - homelab_internal
+    volumes:
+      - airflow_dags:/opt/airflow/dags
+      - airflow_logs:/opt/airflow/logs
+      - airflow_plugins:/opt/airflow/plugins
+    command: scheduler
+
+  # --- BUSINESS APPS ---
+  dolibarr:
+    image: upshift/dolibarr:latest
+    container_name: homelab_dolibarr
+    restart: always
+    environment:
+      # DOLIBARR_ADMIN_USER: ${DOLI_ADMIN_USER}
+      # DOLIBARR_ADMIN_PASSWORD: ${DOLI_ADMIN_PASS}
+       DOLI_DB_HOST: mysql_db
+       DOLI_DB_USER: root
+       DOLI_DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+       DOLI_DB_NAME: dolibarr
+    networks:
+      - homelab_internal
+      - nginx-proxy-network
+    depends_on:
+      - mysql_db
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: homelab_n8n
+    restart: always
+    networks:
+      - homelab_internal
+      - nginx-proxy-network
+    depends_on:
+      - db_postgres
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+  # --- DATA SCIENCE (HADOOP HDFS & SPARK) ---
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: homelab_namenode
+    restart: always
+    environment:
+      - CLUSTER_NAME=homelab_hdfs
+    networks:
+      - homelab_internal
+      - nginx-proxy-network
+    volumes:
+      - namenode_data:/hadoop/dfs/name
+      
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: homelab_datanode
+    restart: always
+    environment:
+      - SERVICE_PRECONDITION=homelab_namenode:9870
+    networks:
+      - homelab_internal
+    depends_on:
+      - namenode
+    volumes:
+      - datanode_data:/hadoop/dfs/data
+
+  spark-master:
+    image: bitnamilegacy/spark:3.5.1
+    container_name: homelab_spark_master
+    restart: always
+    environment:
+      - SPARK_MODE=master
+    networks:
+      - homelab_internal
+      - nginx-proxy-network
+
+  spark-worker:
+    image: bitnamilegacy/spark:3.5.1
+    container_name: homelab_spark_worker
+    restart: always
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      # Variáveis opcionais para limitar o uso no homelab:
+      - SPARK_WORKER_MEMORY=4G
+      - SPARK_WORKER_CORES=4
+    networks:
+      - homelab_internal
+    depends_on:
+      - spark-master
+
+networks:
+  homelab_internal:
+    driver: bridge
+  nginx-proxy-network:
+    external: true
+
+volumes:
+  mysql_data:
+  postgres_data:
+  mongodb_data:
+  appsmith_data:
+  budibase_data:
+  n8n_data:
+  heimdall_config:
+  airflow_dags:
+  airflow_logs:
+  airflow_plugins:
+  jenkins_data:
+  sure_data:
+  namenode_data:
+  datanode_data:
