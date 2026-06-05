@@ -1,18 +1,31 @@
 services:
   # --- DASHBOARD ---
-  heimdall:
-    image: lscr.io/linuxserver/heimdall:latest
-    container_name: homelab_heimdall
-    restart: always
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Sao_Paulo
-    networks:
-      - nginx-proxy-network
-    volumes:
-      - heimdall_config:/config
-      
+#  heimdall:
+#    image: lscr.io/linuxserver/heimdall:latest
+#    container_name: homelab_heimdall
+#    restart: always
+#    environment:
+#      - PUID=1000
+#      - PGID=1000
+#      - TZ=America/Sao_Paulo
+#    networks:
+#      - nginx-proxy-network
+#    volumes:
+#      - heimdall_config:/config
+  homarr:
+      container_name: homarr
+      image: ghcr.io/homarr-labs/homarr:latest
+      restart: unless-stopped
+      volumes:
+#        - /var/run/docker.sock:/var/run/docker.sock # Optional, only if you want docker integration
+        - ./homarr/appdata:/appdata
+      environment:
+        - SECRET_ENCRYPTION_KEY=b718b5b721a683da54184ea52ed7033d129a8b777c0767744ea2fd5b66faccc2
+      ports:
+        - '7575:7575'
+      networks:
+        - nginx-proxy-network
+     
   # --- BANCOS DE DADOS ---
   mysql_db:
     image: mysql:8.0
