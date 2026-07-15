@@ -70,6 +70,7 @@ services:
       - DB_HOST= ${DB_HOST}
       - DB_PORT= 5432
       - SECRET_KEY_BASE= ${SECRET_KEY_BASE}
+      - REDIS_URL=redis://homelab_redis:6379/0
       - TZ=America/Sao_Paulo
     networks:
       - homelab_internal
