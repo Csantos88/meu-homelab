@@ -13,6 +13,7 @@ services:
         - '7575:7575'
       networks:
         - nginx-proxy-network
+        - homelab_internal
       
   # --- BANCOS DE DADOS ---
   mysql_db:
