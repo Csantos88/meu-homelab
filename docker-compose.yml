@@ -13,7 +13,7 @@ services:
         - '7575:7575'
       networks:
         - nginx-proxy-network
-     
+      
   # --- BANCOS DE DADOS ---
   mysql_db:
     image: mysql:8.0
@@ -80,6 +80,18 @@ services:
       - db_redis
     volumes:
       - sure_data:/app/storage
+
+  actual_budget:
+    image: actualbudget/actual-server:latest
+    container_name: homelab_actual_budget
+    restart: always
+    ports:
+      - '5006:5006'
+    networks:
+      - homelab_internal
+      - nginx-proxy-network
+    volumes:
+      - actual_data:/data
 
   # --- LOW-CODE & AUTOMATION ---
   appsmith:
@@ -256,3 +268,4 @@ volumes:
   sure_data:
   namenode_data:
   datanode_data:
+  actual_data:
