@@ -41,6 +41,8 @@ services:
 
   db_mongodb:
     image: mongo:6.0
+    ports:
+      - "27017:27017"
     container_name: homelab_mongodb
     restart: always
     environment:
