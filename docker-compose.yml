@@ -46,7 +46,7 @@ services:
     container_name: homelab_mongodb
     restart: always
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     networks:
       - homelab_internal
@@ -69,10 +69,10 @@ services:
     environment:
       - POSTGRES_USER= ${POSTGRES_USER}
       - POSTGRES_PASSWORD= ${POSTGRES_PASSWORD}
-      - POSTGRES_DB= ${POSTGRES_DB}
+      - POSTGRES_DB= ${SURE_POSTGRES_DB}
       - DB_HOST= ${DB_HOST}
       - DB_PORT= 5432
-      - SECRET_KEY_BASE= ${SECRET_KEY_BASE}
+      - SECRET_KEY_BASE= ${SURE_SECRET_KEY_BASE}
       - REDIS_URL=redis://homelab_redis:6379/0
       - TZ=America/Sao_Paulo
     networks:
@@ -125,7 +125,7 @@ services:
     image: jenkins/jenkins:lts
     container_name: homelab_jenkins
     restart: always
-    user: root
+    user: ${JEKNKINS_ROOT_USER}
     networks:
       - homelab_internal
       - nginx-proxy-network
@@ -175,17 +175,26 @@ services:
     container_name: homelab_dolibarr
     restart: always
     environment:
-      # DOLIBARR_ADMIN_USER: ${DOLI_ADMIN_USER}
-      # DOLIBARR_ADMIN_PASSWORD: ${DOLI_ADMIN_PASS}
+       DOLIBARR_ADMIN_USER: ${DOLI_ADMIN_USER}
+       DOLIBARR_ADMIN_PASSWORD: ${DOLI_ADMIN_PASS}
+       # DOLI_DB_TYPE: pgsql
+       # DOLI_DB_HOST: db_postgres
+       # DOLI_DB_PORT: 5432
+       # DOLI_DB_NAME: ${DOLI_DB_NAME}
+       # DOLI_DB_USER: ${DOLI_DB_USER}
+       # DOLI_DB_PASSWORD: ${PG_DOLI_DB_PASSWD}
+       DOLI_DB_TYPE: mysqli
        DOLI_DB_HOST: mysql_db
-       DOLI_DB_USER: root
+       DOLI_DB_USER: ${MYSQL_ROOT_USER}
        DOLI_DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-       DOLI_DB_NAME: dolibarr
+       DOLI_DB_NAME: ${MYSQL_DB_SCHEMA}
+       DOLI_DB_PREFIX: llx_
     networks:
       - homelab_internal
       - nginx-proxy-network
     depends_on:
       - mysql_db
+      # - db_postgres
 
   n8n:
     image: n8nio/n8n:latest
