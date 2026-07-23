@@ -29,7 +29,7 @@ services:
       - mysql_data:/var/lib/mysql
 
   db_postgres:
-    image: postgres:15
+    image: postgres:17
     container_name: homelab_postgres
     restart: always
     environment:
@@ -40,7 +40,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   db_mongodb:
-    image: mongo:6.0
+    image: mongodb/mongodb-community-server:latest
     ports:
       - "27017:27017"
     container_name: homelab_mongodb
