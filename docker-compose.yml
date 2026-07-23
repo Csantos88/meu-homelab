@@ -293,9 +293,9 @@ services:
       - wazuh_logs:/var/wazuh-manager/logs
       - wazuh_queue:/var/wazuh-manager/queue
       - wazuh_var_multigroups:/var/wazuh-manager/var/multigroups
-      - ./config/root-ca/certs/root-ca.pem:/var/wazuh-manager/etc/certs/root-ca.pem
-      - ./config/wazuh_manager/certs/wazuh.manager.pem:/var/wazuh-manager/etc/certs/manager.pem
-      - ./config/wazuh_manager/certs/wazuh.manager-key.pem:/var/wazuh-manager/etc/certs/manager-key.pem
+      - /opt/wazuh/config/root-ca/certs/root-ca.pem:/var/wazuh-manager/etc/certs/root-ca.pem
+      - /opt/wazuh/config/wazuh_manager/certs/wazuh.manager.pem:/var/wazuh-manager/etc/certs/manager.pem
+      - /opt/wazuh/config/wazuh_manager/certs/wazuh.manager-key.pem:/var/wazuh-manager/etc/certs/manager-key.pem
 
   wazuh.indexer:
     image: wazuh/wazuh-indexer:4.9.0
@@ -330,12 +330,12 @@ services:
       start_period: 60s
     volumes:
       - wazuh-indexer-data:/var/lib/wazuh-indexer
-      - ./config/root-ca/certs/root-ca.pem:/usr/share/wazuh-indexer/config/certs/root-ca.pem
-      - ./config/wazuh_indexer/certs/wazuh.indexer-key.pem:/usr/share/wazuh-indexer/config/certs/indexer-key.pem
-      - ./config/wazuh_indexer/certs/wazuh.indexer.pem:/usr/share/wazuh-indexer/config/certs/indexer.pem
-      - ./config/wazuh_indexer/certs/admin.pem:/usr/share/wazuh-indexer/config/certs/admin.pem
-      - ./config/wazuh_indexer/certs/admin-key.pem:/usr/share/wazuh-indexer/config/certs/admin-key.pem
-
+      - /opt/wazuh/config/root-ca/certs/root-ca.pem:/usr/share/wazuh-indexer/config/certs/root-ca.pem
+      - /opt/wazuh/config/wazuh_indexer/certs/wazuh.indexer-key.pem:/usr/share/wazuh-indexer/config/certs/indexer-key.pem
+      - /opt/wazuh/config/wazuh_indexer/certs/wazuh.indexer.pem:/usr/share/wazuh-indexer/config/certs/indexer.pem
+      - /opt/wazuh/config/wazuh_indexer/certs/admin.pem:/usr/share/wazuh-indexer/config/certs/admin.pem
+      - /opt/wazuh/config/wazuh_indexer/certs/admin-key.pem:/usr/share/wazuh-indexer/config/certs/admin-key.pem
+      
   wazuh.dashboard:
     image: wazuh/wazuh-dashboard:4.9.0
     hostname: wazuh.dashboard
@@ -365,9 +365,9 @@ services:
       - SERVER_SSL_KEY=/usr/share/wazuh-dashboard/config/certs/dashboard-key.pem
       - OPENSEARCH_SSL_CERTIFICATE_AUTHORITIES=/usr/share/wazuh-dashboard/config/certs/root-ca.pem
     volumes:
-      - ./config/wazuh_dashboard/certs/wazuh.dashboard.pem:/usr/share/wazuh-dashboard/config/certs/dashboard.pem
-      - ./config/wazuh_dashboard/certs/wazuh.dashboard-key.pem:/usr/share/wazuh-dashboard/config/certs/dashboard-key.pem
-      - ./config/root-ca/certs/root-ca.pem:/usr/share/wazuh-dashboard/config/certs/root-ca.pem
+      - /opt/wazuh/config/wazuh_dashboard/certs/wazuh.dashboard.pem:/usr/share/wazuh-dashboard/config/certs/dashboard.pem
+      - /opt/wazuh/config/wazuh_dashboard/certs/wazuh.dashboard-key.pem:/usr/share/wazuh-dashboard/config/certs/dashboard-key.pem
+      - /opt/wazuh/config/root-ca/certs/root-ca.pem:/usr/share/wazuh-dashboard/config/certs/root-ca.pem
       - wazuh-dashboard-config:/usr/share/wazuh-dashboard/config
       - wazuh-dashboard-custom:/usr/share/wazuh-dashboard/plugins/wazuh/public/assets/custom
     depends_on:
